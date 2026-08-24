@@ -1,5 +1,7 @@
 # US Market Index (Fear & Greed Index 대시보드)
 
+🔗 **실시간 라이브 배포 사이트**: [https://altdmfk.github.io/US_market_index/](https://altdmfk.github.io/US_market_index/)
+
 ![alt text](img/index_img.png)
 
 미국 시장의 핵심 심리 지표인 **CNN 공포 & 탐욕 지수(Fear & Greed Index)**와 대표 벤치마크 지수(**S&P 500**, **Nasdaq-100 QQQ**)를 실시간으로 추적하는 웹 대시보드입니다. React, Vite, Tailwind CSS 기반으로 구축되었습니다.
