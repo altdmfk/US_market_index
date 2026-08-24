@@ -2,6 +2,7 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 
 export default defineConfig({
+  base: './', // Ensures assets load correctly on both GitHub Pages and custom domains
   plugins: [react()],
   server: {
     port: 3000,
