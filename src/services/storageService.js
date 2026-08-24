@@ -6,6 +6,7 @@ const STORAGE_KEY_LAST_GOOD = 'pld_last_known_good';
 
 /**
  * Idempotent Daily Snapshot Storage with Composite Key (date + data_type)
+ * Saves live data pulled directly from the public API into local storage.
  */
 export function saveDailySnapshot(record) {
   if (!record || !record.sourceId) return;
@@ -74,7 +75,7 @@ export function getLastKnownGood(sourceId = 'fear_and_greed') {
 }
 
 /**
- * Seeds a verified record for any user-chosen date
+ * Seeds a test record for any user-chosen date (Developer Sandbox Test Tool)
  */
 export function seedCustomDateRecord(dateStr, customScore = null, sourceId = 'fear_and_greed') {
   const targetDate = dateStr || getYesterdayDateString();
@@ -88,37 +89,14 @@ export function seedCustomDateRecord(dateStr, customScore = null, sourceId = 'fe
 
   const sentiment = getSentimentCategory(numScore);
 
-  const defaultValues = {
-    fear_and_greed: {
-      score: numScore,
-      rating: sentiment.label,
-      unit: 'pts',
-      name: 'CNN Fear & Greed Index'
-    },
-    sp500: {
-      score: 5634.58,
-      rating: 'Bullish',
-      unit: 'USD',
-      name: 'S&P 500'
-    },
-    qqq: {
-      score: 489.12,
-      rating: 'Bullish',
-      unit: 'USD',
-      name: 'Invesco QQQ Trust (QQQ)'
-    }
-  };
-
-  const seed = defaultValues[sourceId] || defaultValues.fear_and_greed;
-
   const customSnapshot = {
     id: compositeKey,
     date: targetDate,
     dataType: sourceId,
-    sourceName: seed.name,
-    score: seed.score,
-    rating: seed.rating,
-    unit: seed.unit,
+    sourceName: 'CNN Fear & Greed Index',
+    score: numScore,
+    rating: sentiment.label,
+    unit: 'pts',
     rawTimestamp: rawTs,
     indexUpdatedAt: rawTs,
     indexUpdatedAtFormatted: formatLocalTimestamp(rawTs),
@@ -130,8 +108,8 @@ export function seedCustomDateRecord(dateStr, customScore = null, sourceId = 'fe
     rawPayload: {
       source: 'User Seeded Test Record',
       date: targetDate,
-      score: seed.score,
-      rating: seed.rating
+      score: numScore,
+      rating: sentiment.label
     }
   };
 

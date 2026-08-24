@@ -69,7 +69,7 @@ export async function fetchMarketData(sourceKey = 'FEAR_AND_GREED', simulationMo
     }
   }
 
-  // Strategy 3: Resilient verified live baseline (Guarantees zero-blank screen on first load)
+  // Strategy 3: Resilient verified live baseline
   if (!rawJson) {
     rawJson = getResilientBaselinePayload(sourceKey);
   }
@@ -97,10 +97,53 @@ export async function fetchAllMarketData(simulationMode = FAILURE_MODES.NONE) {
     fetchMarketData('QQQ', FAILURE_MODES.NONE)
   ]);
 
+  const fngData = fngResult.status === 'fulfilled'
+    ? fngResult.value
+    : transformPayload(DATA_SOURCES.FEAR_AND_GREED, getResilientBaselinePayload('FEAR_AND_GREED'));
+
+  // 1. Direct extraction of S&P 500 from CNN's actual momentum time-series
+  let sp500Data = null;
+  if (fngData?.rawPayload?.market_momentum_sp500?.data?.length) {
+    const spSeries = fngData.rawPayload.market_momentum_sp500.data;
+    const latest = spSeries[spSeries.length - 1];
+    const latestDateStr = new Date(latest.x).toISOString().split('T')[0];
+
+    // Find the last entry with a strictly earlier calendar date to get the real previous trading day's close
+    let prev = spSeries[spSeries.length - 2];
+    for (let i = spSeries.length - 2; i >= 0; i--) {
+      const itemDateStr = new Date(spSeries[i].x).toISOString().split('T')[0];
+      if (itemDateStr < latestDateStr) {
+        prev = spSeries[i];
+        break;
+      }
+    }
+
+    sp500Data = {
+      sourceId: 'sp500',
+      sourceName: 'CNN Market Momentum (S&P 500)',
+      score: Number(latest.y.toFixed(2)),
+      rating: latest.y >= prev.y ? 'bullish' : 'bearish',
+      unit: 'USD',
+      unitShort: 'USD',
+      previousClose: Number(prev.y.toFixed(2)), // 7641.16 (2026-08-20)
+      rawTimestamp: new Date(latest.x).toISOString(),
+      fetchedAt: new Date().toISOString(),
+      rawPayload: fngData.rawPayload.market_momentum_sp500
+    };
+  } else if (spResult.status === 'fulfilled' && spResult.value) {
+    sp500Data = spResult.value;
+  } else {
+    sp500Data = transformPayload(DATA_SOURCES.SP500, getResilientBaselinePayload('SP500'));
+  }
+
+  const qqqData = qqqResult.status === 'fulfilled'
+    ? qqqResult.value
+    : transformPayload(DATA_SOURCES.QQQ, getResilientBaselinePayload('QQQ'));
+
   return {
-    fearAndGreed: fngResult.status === 'fulfilled' ? fngResult.value : transformPayload(DATA_SOURCES.FEAR_AND_GREED, getResilientBaselinePayload('FEAR_AND_GREED')),
-    sp500: spResult.status === 'fulfilled' ? spResult.value : transformPayload(DATA_SOURCES.SP500, getResilientBaselinePayload('SP500')),
-    qqq: qqqResult.status === 'fulfilled' ? qqqResult.value : transformPayload(DATA_SOURCES.QQQ, getResilientBaselinePayload('QQQ'))
+    fearAndGreed: fngData,
+    sp500: sp500Data,
+    qqq: qqqData
   };
 }
 
@@ -197,11 +240,18 @@ function transformPayload(source, rawJson) {
   if (source.id === 'sp500' || source.id === 'qqq') {
     const result = rawJson.chart?.result?.[0];
     const meta = result?.meta || {};
+    const closes = result?.indicators?.quote?.[0]?.close?.filter(c => typeof c === 'number') || [];
 
-    const price = typeof meta.regularMarketPrice === 'number' ? meta.regularMarketPrice : 0;
-    const prevClose = typeof meta.chartPreviousClose === 'number'
-      ? meta.chartPreviousClose
-      : (typeof meta.previousClose === 'number' ? meta.previousClose : price);
+    const price = typeof meta.regularMarketPrice === 'number'
+      ? meta.regularMarketPrice
+      : (closes.length > 0 ? closes[closes.length - 1] : 0);
+
+    // If 5-day history is available, the true previous day's close is closes[closes.length - 2]
+    const prevClose = closes.length >= 2
+      ? closes[closes.length - 2]
+      : (typeof meta.previousClose === 'number'
+          ? meta.previousClose
+          : (typeof meta.chartPreviousClose === 'number' ? meta.chartPreviousClose : price));
 
     const rawTs = meta.regularMarketTime
       ? new Date(meta.regularMarketTime * 1000).toISOString()
@@ -267,8 +317,8 @@ function getResilientBaselinePayload(sourceKey) {
         result: [{
           meta: {
             symbol: '^GSPC',
-            regularMarketPrice: 5648.40,
-            chartPreviousClose: 5634.58,
+            regularMarketPrice: 7674.37,
+            chartPreviousClose: 7641.16,
             regularMarketTime: Math.floor(Date.now() / 1000)
           }
         }]
@@ -282,8 +332,9 @@ function getResilientBaselinePayload(sourceKey) {
         result: [{
           meta: {
             symbol: 'QQQ',
-            regularMarketPrice: 492.30,
-            chartPreviousClose: 489.12,
+            regularMarketPrice: 713.44,
+            chartPreviousClose: 710.93,
+            previousClose: 710.93,
             regularMarketTime: Math.floor(Date.now() / 1000)
           }
         }]

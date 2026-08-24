@@ -71,7 +71,7 @@ export default function MarketIndexCard({
                 )}
               </div>
               <span className="text-[11px] text-slate-400 font-mono">
-                vs prev {prevClose?.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                vs previous close {prevClose?.toLocaleString(undefined, { minimumFractionDigits: 2 })}
               </span>
             </div>
           )}
