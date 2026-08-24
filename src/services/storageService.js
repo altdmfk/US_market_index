@@ -1,6 +1,6 @@
 import { getLocalDateString, getYesterdayDateString, formatLocalTimestamp } from '../utils/timezone';
 import { getSentimentCategory } from '../constants/config';
-import { fetchSupabaseSnapshots, upsertSupabaseSnapshot } from './supabaseService';
+import { fetchSupabaseSnapshots } from './supabaseService';
 
 const STORAGE_KEY_SNAPSHOTS = 'pld_daily_snapshots';
 const STORAGE_KEY_LAST_GOOD = 'pld_last_known_good';
@@ -47,9 +47,6 @@ export function saveDailySnapshot(record) {
   snapshots.sort((a, b) => b.date.localeCompare(a.date));
   localStorage.setItem(STORAGE_KEY_SNAPSHOTS, JSON.stringify(snapshots.slice(0, 10)));
   localStorage.setItem(`${STORAGE_KEY_LAST_GOOD}_${record.sourceId}`, JSON.stringify(record));
-
-  // Asynchronously sync to Supabase Cloud DB
-  upsertSupabaseSnapshot(snapshot);
 
   return snapshot;
 }

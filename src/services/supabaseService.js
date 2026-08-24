@@ -48,33 +48,3 @@ export async function fetchSupabaseSnapshots(dataType = null) {
     return [];
   }
 }
-
-/**
- * Upserts a live daily snapshot to Supabase Cloud DB
- */
-export async function upsertSupabaseSnapshot(snapshot) {
-  if (!snapshot) return false;
-
-  try {
-    const row = {
-      date: snapshot.date,
-      data_type: snapshot.dataType || snapshot.sourceId,
-      score: Number(snapshot.score),
-      rating: snapshot.rating || 'neutral',
-      unit: snapshot.unit || snapshot.unitShort || 'pts',
-      raw_timestamp: snapshot.rawTimestamp || new Date().toISOString(),
-      source_name: snapshot.sourceName || 'CNN Business Markets',
-      raw_payload: snapshot.rawPayload || {}
-    };
-
-    const response = await fetch(`${SUPABASE_CONFIG.url}/rest/v1/daily_market_snapshots?on_conflict=date,data_type`, {
-      method: 'POST',
-      headers: HEADERS,
-      body: JSON.stringify(row)
-    });
-
-    return response.ok;
-  } catch {
-    return false;
-  }
-}

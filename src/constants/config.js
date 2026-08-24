@@ -3,7 +3,7 @@ export const TIMEZONE_LABEL = 'KST (UTC+9)';
 
 export const SUPABASE_CONFIG = {
   url: 'https://qdgzfzxvlxoalkcvbwcd.supabase.co',
-  anonKey: 'sb_publishable_OtTGUb0Iyc0l_vYc3cAFZA_6sMTXsDN'
+  anonKey: 'sb_publishable__kAlkIw3SeH4XKH5MZJCMw_yJqb7Qne'
 };
 
 export const DATA_SOURCES = {
