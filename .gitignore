@@ -7,12 +7,6 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
-# Diagnostic & Validation Documents
-Validation.md
-Validation.pdf
-validation.md
-validation.pdf
-
 # Dependency & Build directories
 node_modules/
 dist/
