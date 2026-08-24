@@ -36,7 +36,7 @@ async function upsertToSupabase(record) {
       raw_payload: record.rawPayload || {}
     };
 
-    const response = await fetch(`${SUPABASE_URL}/rest/v1/daily_market_snapshots`, {
+    const response = await fetch(`${SUPABASE_URL}/rest/v1/daily_market_snapshots?on_conflict=date,data_type`, {
       method: 'POST',
       headers: {
         'apikey': SUPABASE_ANON_KEY,

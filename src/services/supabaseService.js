@@ -67,7 +67,7 @@ export async function upsertSupabaseSnapshot(snapshot) {
       raw_payload: snapshot.rawPayload || {}
     };
 
-    const response = await fetch(`${SUPABASE_CONFIG.url}/rest/v1/daily_market_snapshots`, {
+    const response = await fetch(`${SUPABASE_CONFIG.url}/rest/v1/daily_market_snapshots?on_conflict=date,data_type`, {
       method: 'POST',
       headers: HEADERS,
       body: JSON.stringify(row)
