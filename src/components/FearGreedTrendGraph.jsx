@@ -1,12 +1,12 @@
 import React, { useState, useMemo } from 'react';
-import { TrendingUp, TrendingDown, Minus, LineChart } from 'lucide-react';
+import { TrendingUp, TrendingDown, LineChart } from 'lucide-react';
 import { getSentimentCategory } from '../constants/config';
 import { getLocalDateString } from '../utils/timezone';
 
 export default function FearGreedTrendGraph({ data, snapshots }) {
   const [hoveredIndex, setHoveredIndex] = useState(null);
 
-  // Strictly use ONLY the actual stored snapshots in the database / local storage
+  // Strictly use ONLY the actual stored snapshots and market observation dates in KST
   const trendPoints = useMemo(() => {
     if (!Array.isArray(snapshots) || snapshots.length === 0) {
       return [];
@@ -14,11 +14,25 @@ export default function FearGreedTrendGraph({ data, snapshots }) {
 
     const pointsMap = new Map();
 
-    // Ingest only actual stored snapshots
+    // Pure dynamic date extraction converted to KST (Asia/Seoul)
+    const getMarketDateLabel = (item) => {
+      const ts = item.rawTimestamp || item.indexUpdatedAt || item.timestamp;
+      if (ts) {
+        try {
+          return getLocalDateString(ts);
+        } catch {
+          return item.date || '';
+        }
+      }
+      return item.date || '';
+    };
+
+    // Ingest stored snapshots
     snapshots.forEach((s) => {
-      if (s && s.date && typeof s.score === 'number') {
-        pointsMap.set(s.date, {
-          date: s.date,
+      if (s && typeof s.score === 'number') {
+        const dateKey = getMarketDateLabel(s);
+        pointsMap.set(dateKey, {
+          date: dateKey,
           score: Number(s.score.toFixed(1)),
           rating: s.rating || getSentimentCategory(s.score).label,
           isSeeded: !!s.isSeeded
@@ -26,17 +40,15 @@ export default function FearGreedTrendGraph({ data, snapshots }) {
       }
     });
 
-    // Ensure today's live data is included if not in snapshots
+    // Ingest live data using its actual market observation timestamp
     if (data && typeof data.score === 'number') {
-      const todayStr = getLocalDateString(new Date());
-      if (!pointsMap.has(todayStr)) {
-        pointsMap.set(todayStr, {
-          date: todayStr,
-          score: Number(data.score.toFixed(1)),
-          rating: data.rating || getSentimentCategory(data.score).label,
-          isSeeded: false
-        });
-      }
+      const liveMarketDate = getMarketDateLabel(data);
+      pointsMap.set(liveMarketDate, {
+        date: liveMarketDate,
+        score: Number(data.score.toFixed(1)),
+        rating: data.rating || getSentimentCategory(data.score).label,
+        isSeeded: false
+      });
     }
 
     // Sort strictly ascending by date (oldest to newest)
@@ -189,19 +201,14 @@ export default function FearGreedTrendGraph({ data, snapshots }) {
                 {/* Hit target */}
                 <circle cx={cx} cy={cy} r="14" fill="transparent" />
 
-                {/* Outer Glow */}
-                {isHovered && (
-                  <circle cx={cx} cy={cy} r="8" className="fill-blue-400/30 animate-ping" />
-                )}
-
-                {/* Center Node */}
+                {/* Center Node (Static & crisp without jumping animation) */}
                 <circle
                   cx={cx}
                   cy={cy}
-                  r={isHovered ? '6' : '4.5'}
-                  fill={p.isSeeded ? '#f59e0b' : '#38bdf8'}
-                  stroke="#0f172a"
-                  strokeWidth="2"
+                  r="4.5"
+                  fill={isHovered ? '#60a5fa' : (p.isSeeded ? '#f59e0b' : '#38bdf8')}
+                  stroke={isHovered ? '#ffffff' : '#0f172a'}
+                  strokeWidth={isHovered ? '2' : '1.5'}
                 />
 
                 {/* Score value above point */}

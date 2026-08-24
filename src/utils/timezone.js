@@ -1,64 +1,57 @@
+import { TIMEZONE, TIMEZONE_LABEL } from '../constants/config';
+
 /**
- * Returns user's local timezone identifier (e.g. 'America/New_York', 'Asia/Seoul', 'Europe/London')
+ * Returns KST timezone identifier ('Asia/Seoul')
  */
 export function getLocalTimezone() {
-  try {
-    return Intl.DateTimeFormat('en-US').resolvedOptions().timeZone || 'UTC';
-  } catch {
-    return 'UTC';
-  }
+  return TIMEZONE || 'Asia/Seoul';
 }
 
 /**
- * Returns formatted short time string in English (e.g. "10:29:59 AM")
+ * Returns formatted short time string in KST (e.g. "03:44:59 PM KST")
  */
 export function formatLocalTimeShort(input = new Date()) {
   const date = normalizeToDate(input);
   const formatter = new Intl.DateTimeFormat('en-US', {
+    timeZone: TIMEZONE || 'Asia/Seoul',
     hour: '2-digit',
     minute: '2-digit',
     second: '2-digit',
     hour12: true
   });
-  return formatter.format(date);
+  return `${formatter.format(date)} ${TIMEZONE_LABEL || 'KST'}`;
 }
 
 /**
- * Returns full date & time string in English (e.g. "Aug 24, 10:29 AM EDT")
+ * Returns full date & time string in KST (e.g. "Aug 24, 03:44 PM KST")
  */
 export function formatLocalTimestamp(input = new Date()) {
   const date = normalizeToDate(input);
   const formatter = new Intl.DateTimeFormat('en-US', {
+    timeZone: TIMEZONE || 'Asia/Seoul',
     month: 'short',
     day: '2-digit',
     hour: '2-digit',
     minute: '2-digit',
     hour12: true
   });
-  const tzShort = getLocalTimezoneShort();
-  return `${formatter.format(date)} ${tzShort}`;
+  return `${formatter.format(date)} ${TIMEZONE_LABEL || 'KST'}`;
 }
 
 /**
- * Returns short timezone abbreviation or city name from user's location
+ * Returns short timezone abbreviation
  */
 export function getLocalTimezoneShort() {
-  try {
-    const tz = Intl.DateTimeFormat('en-US').resolvedOptions().timeZone;
-    if (!tz) return 'Local';
-    const parts = tz.split('/');
-    return parts[parts.length - 1].replace('_', ' ');
-  } catch {
-    return 'Local';
-  }
+  return TIMEZONE_LABEL || 'KST';
 }
 
 /**
- * Returns YYYY-MM-DD formatted date string in user's local timezone
+ * Returns YYYY-MM-DD formatted date string strictly in Asia/Seoul (KST)
  */
 export function getLocalDateString(input = new Date()) {
   const date = normalizeToDate(input);
   const formatter = new Intl.DateTimeFormat('en-CA', {
+    timeZone: TIMEZONE || 'Asia/Seoul',
     year: 'numeric',
     month: '2-digit',
     day: '2-digit'
@@ -67,7 +60,7 @@ export function getLocalDateString(input = new Date()) {
 }
 
 /**
- * Returns YYYY-MM-DD for yesterday in user's local timezone
+ * Returns YYYY-MM-DD for yesterday in Asia/Seoul (KST)
  */
 export function getYesterdayDateString() {
   const now = new Date();
@@ -78,7 +71,7 @@ export function getYesterdayDateString() {
 /**
  * Converts various timestamp formats into a valid JS Date
  */
-function normalizeToDate(input) {
+export function normalizeToDate(input) {
   if (input instanceof Date) return input;
   if (typeof input === 'number') {
     return new Date(input < 1e11 ? input * 1000 : input);

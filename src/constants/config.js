@@ -1,6 +1,11 @@
 export const TIMEZONE = 'Asia/Seoul';
 export const TIMEZONE_LABEL = 'KST (UTC+9)';
 
+export const SUPABASE_CONFIG = {
+  url: 'https://qdgzfzxvlxoalkcvbwcd.supabase.co',
+  anonKey: 'sb_publishable_OtTGUb0Iyc0l_vYc3cAFZA_6sMTXsDN'
+};
+
 export const DATA_SOURCES = {
   FEAR_AND_GREED: {
     id: 'fear_and_greed',

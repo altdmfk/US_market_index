@@ -7,22 +7,23 @@ export default function HistoryTable({ snapshots, activeSource }) {
   const isFearAndGreed = activeSource.id === 'fear_and_greed';
   const todayDate = getLocalDateString(new Date());
   const yesterdayDate = getYesterdayDateString();
+  const displayedSnapshots = (snapshots || []).slice(0, 10);
 
   return (
     <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-lg">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-800">
         <div>
           <h3 className="text-sm font-bold text-slate-100">
-            Historical snapshots ({snapshots.length} recorded)
+            Historical snapshots ({displayedSnapshots.length} recorded, max 10)
           </h3>
           <p className="text-xs text-slate-400 mt-0.5">
-            Recorded snapshot history
+            Latest 10 daily snapshot records
           </p>
         </div>
       </div>
 
       {/* Snapshot History Table */}
-      {snapshots && snapshots.length > 0 ? (
+      {displayedSnapshots && displayedSnapshots.length > 0 ? (
         <div className="mt-3 overflow-x-auto">
           <table className="w-full text-left text-xs">
             <thead>
@@ -36,7 +37,7 @@ export default function HistoryTable({ snapshots, activeSource }) {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-800/60 font-mono">
-              {snapshots.map((item) => {
+              {displayedSnapshots.map((item) => {
                 const sentiment = isFearAndGreed ? getSentimentCategory(item.score) : { color: 'text-blue-400', bg: 'bg-blue-500/10', border: 'border-blue-500/30' };
                 const isToday = item.date === todayDate;
                 const isYesterday = item.date === yesterdayDate;

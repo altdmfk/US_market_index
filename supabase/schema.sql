@@ -35,11 +35,11 @@ CREATE POLICY "Allow public read access on daily snapshots"
     TO public
     USING (true);
 
--- Policy 2: Service Role / Authenticated Ingestion Writes
-CREATE POLICY "Allow service role upsert on daily snapshots"
+-- Policy 2: Public Client Insert / Upsert (Row-Level Security)
+CREATE POLICY "Allow public insert and upsert on daily snapshots"
     ON public.daily_market_snapshots
     FOR ALL
-    TO service_role
+    TO public
     USING (true)
     WITH CHECK (true);
 

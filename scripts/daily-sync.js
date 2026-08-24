@@ -1,8 +1,11 @@
 /**
  * Standalone Daily Market Ingestion Script (ES Module)
  * Can be run via Cron (GitHub Actions, Supabase Edge Functions, Node.js Cron)
- * Fetches CNN Fear & Greed + Yahoo Finance benchmarks and records daily idempotent snapshot.
+ * Fetches CNN Fear & Greed + Yahoo Finance benchmarks and records daily idempotent snapshot into Supabase Cloud DB.
  */
+
+const SUPABASE_URL = process.env.SUPABASE_URL || 'https://qdgzfzxvlxoalkcvbwcd.supabase.co';
+const SUPABASE_ANON_KEY = process.env.SUPABASE_KEY || 'sb_publishable_OtTGUb0Iyc0l_vYc3cAFZA_6sMTXsDN';
 
 async function fetchJson(url, headers = {}) {
   const response = await fetch(url, {
@@ -20,6 +23,41 @@ async function fetchJson(url, headers = {}) {
   return await response.json();
 }
 
+async function upsertToSupabase(record) {
+  try {
+    const row = {
+      date: record.date,
+      data_type: record.dataType,
+      score: Number(record.score),
+      rating: record.rating,
+      unit: 'pts',
+      raw_timestamp: record.timestamp,
+      source_name: 'CNN Business Markets',
+      raw_payload: record.rawPayload || {}
+    };
+
+    const response = await fetch(`${SUPABASE_URL}/rest/v1/daily_market_snapshots`, {
+      method: 'POST',
+      headers: {
+        'apikey': SUPABASE_ANON_KEY,
+        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+        'Content-Type': 'application/json',
+        'Prefer': 'resolution=merge-duplicates,return=representation'
+      },
+      body: JSON.stringify(row)
+    });
+
+    if (response.ok) {
+      console.log(`✓ Successfully upserted daily record to Supabase DB (${record.date})`);
+    } else {
+      const errText = await response.text();
+      console.warn(`! Supabase upsert notice: ${response.status} ${errText}`);
+    }
+  } catch (err) {
+    console.warn(`! Supabase network notice: ${err.message}`);
+  }
+}
+
 async function runDailySync() {
   console.log(`[${new Date().toISOString()}] Starting Daily Market Ingestion...`);
 
@@ -35,20 +73,27 @@ async function runDailySync() {
 
     console.log(`✓ Fetched CNN Fear & Greed: Score = ${fng.score.toFixed(1)} (${fng.rating})`);
 
-    // 2. Format daily record
-    const todayStr = new Date().toISOString().split('T')[0];
+    // 2. Format daily record dynamically from upstream observation timestamp
+    const dateStr = fng.timestamp
+      ? new Date(fng.timestamp).toISOString().split('T')[0]
+      : new Date().toISOString().split('T')[0];
     const dailyRecord = {
-      id: `${todayStr}_fear_and_greed`,
-      date: todayStr,
+      id: `${dateStr}_fear_and_greed`,
+      date: dateStr,
       dataType: 'fear_and_greed',
       score: Number(fng.score.toFixed(2)),
       rating: fng.rating,
       previousClose: fng.previous_close,
       timestamp: fng.timestamp || new Date().toISOString(),
-      updatedAt: new Date().toISOString()
+      updatedAt: new Date().toISOString(),
+      rawPayload: cnnData
     };
 
-    console.log(`✓ Daily Snapshot Prepared:\n`, JSON.stringify(dailyRecord, null, 2));
+    console.log(`✓ Daily Snapshot Prepared:\n`, JSON.stringify({ ...dailyRecord, rawPayload: '[omitted]' }, null, 2));
+
+    // 3. Save directly to Supabase Cloud DB
+    await upsertToSupabase(dailyRecord);
+
     console.log(`✓ Daily Sync completed successfully.`);
   } catch (err) {
     console.error(`✗ Daily Sync failed:`, err.message);

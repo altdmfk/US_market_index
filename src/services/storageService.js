@@ -1,20 +1,21 @@
 import { getLocalDateString, getYesterdayDateString, formatLocalTimestamp } from '../utils/timezone';
 import { getSentimentCategory } from '../constants/config';
+import { fetchSupabaseSnapshots, upsertSupabaseSnapshot } from './supabaseService';
 
 const STORAGE_KEY_SNAPSHOTS = 'pld_daily_snapshots';
 const STORAGE_KEY_LAST_GOOD = 'pld_last_known_good';
 
 /**
  * Idempotent Daily Snapshot Storage with Composite Key (date + data_type)
- * Saves live data pulled directly from the public API into local storage.
+ * Saves live data pulled directly from the public API into local storage and Supabase Cloud DB.
  */
 export function saveDailySnapshot(record) {
   if (!record || !record.sourceId) return;
 
-  const localDate = getLocalDateString(new Date());
+  const rawTs = record.rawTimestamp || new Date().toISOString();
+  const localDate = getLocalDateString(rawTs);
   const compositeKey = `${localDate}_${record.sourceId}`;
   const now = new Date();
-  const rawTs = record.rawTimestamp || now.toISOString();
 
   const snapshot = {
     id: compositeKey,
@@ -44,8 +45,11 @@ export function saveDailySnapshot(record) {
   }
 
   snapshots.sort((a, b) => b.date.localeCompare(a.date));
-  localStorage.setItem(STORAGE_KEY_SNAPSHOTS, JSON.stringify(snapshots.slice(0, 30)));
+  localStorage.setItem(STORAGE_KEY_SNAPSHOTS, JSON.stringify(snapshots.slice(0, 10)));
   localStorage.setItem(`${STORAGE_KEY_LAST_GOOD}_${record.sourceId}`, JSON.stringify(record));
+
+  // Asynchronously sync to Supabase Cloud DB
+  upsertSupabaseSnapshot(snapshot);
 
   return snapshot;
 }
@@ -57,11 +61,30 @@ export function getStoredSnapshots(dataType = null) {
     const list = JSON.parse(raw);
     if (!Array.isArray(list)) return [];
     if (dataType) {
-      return list.filter(item => item.dataType === dataType);
+      return list.filter(item => item.dataType === dataType).slice(0, 10);
     }
-    return list;
+    return list.slice(0, 10);
   } catch {
     return [];
+  }
+}
+
+/**
+ * Synchronizes local snapshots with Supabase Cloud DB (Supabase is authoritative)
+ */
+export async function syncWithSupabase(dataType = null) {
+  try {
+    const remoteSnapshots = await fetchSupabaseSnapshots(dataType);
+    if (remoteSnapshots && remoteSnapshots.length > 0) {
+      localStorage.setItem(STORAGE_KEY_SNAPSHOTS, JSON.stringify(remoteSnapshots.slice(0, 10)));
+      if (dataType) {
+        return remoteSnapshots.filter(item => item.dataType === dataType).slice(0, 10);
+      }
+      return remoteSnapshots.slice(0, 10);
+    }
+    return getStoredSnapshots(dataType);
+  } catch {
+    return getStoredSnapshots(dataType);
   }
 }
 

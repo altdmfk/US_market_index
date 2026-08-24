@@ -5,6 +5,7 @@ import { getLocalDateString } from '../utils/timezone';
 import {
   saveDailySnapshot,
   getStoredSnapshots,
+  syncWithSupabase,
   getLastKnownGood,
   seedCustomDateRecord,
   clearAllStorage
@@ -80,6 +81,11 @@ export function useDashboardFSM() {
       setLastKnownGood(initialGood);
     }
     refreshSnapshots();
+    syncWithSupabase('fear_and_greed').then(synced => {
+      if (isMountedRef.current && synced && synced.length > 0) {
+        setSnapshots(synced);
+      }
+    });
     executeFetch(FAILURE_MODES.NONE);
 
     return () => {

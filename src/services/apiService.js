@@ -125,7 +125,7 @@ export async function fetchAllMarketData(simulationMode = FAILURE_MODES.NONE) {
       rating: latest.y >= prev.y ? 'bullish' : 'bearish',
       unit: 'USD',
       unitShort: 'USD',
-      previousClose: Number(prev.y.toFixed(2)), // 7641.16 (2026-08-20)
+      previousClose: Number(prev.y.toFixed(2)),
       rawTimestamp: new Date(latest.x).toISOString(),
       fetchedAt: new Date().toISOString(),
       rawPayload: fngData.rawPayload.market_momentum_sp500
