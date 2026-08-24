@@ -1,26 +1,23 @@
 /**
- * Standalone Daily Market Ingestion Script
+ * Standalone Daily Market Ingestion Script (ES Module)
  * Can be run via Cron (GitHub Actions, Supabase Edge Functions, Node.js Cron)
  * Fetches CNN Fear & Greed + Yahoo Finance benchmarks and records daily idempotent snapshot.
  */
 
-const https = require('https');
-
-function fetchJson(url, headers = {}) {
-  return new Promise((resolve, reject) => {
-    const req = https.get(url, { headers: { 'User-Agent': 'Mozilla/5.0', ...headers } }, (res) => {
-      let data = '';
-      res.on('data', chunk => data += chunk);
-      res.on('end', () => {
-        try {
-          resolve(JSON.parse(data));
-        } catch (e) {
-          reject(new Error(`Failed to parse JSON from ${url}: ${e.message}`));
-        }
-      });
-    });
-    req.on('error', reject);
+async function fetchJson(url, headers = {}) {
+  const response = await fetch(url, {
+    headers: {
+      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+      'Accept': 'application/json',
+      ...headers
+    }
   });
+
+  if (!response.ok) {
+    throw new Error(`HTTP error! status: ${response.status} from ${url}`);
+  }
+
+  return await response.json();
 }
 
 async function runDailySync() {
@@ -31,6 +28,10 @@ async function runDailySync() {
     const cnnUrl = 'https://production.dataviz.cnn.io/index/fearandgreed/graphdata';
     const cnnData = await fetchJson(cnnUrl);
     const fng = cnnData.fear_and_greed;
+
+    if (!fng || typeof fng.score !== 'number') {
+      throw new Error('Malformed payload: fear_and_greed or score is missing');
+    }
 
     console.log(`✓ Fetched CNN Fear & Greed: Score = ${fng.score.toFixed(1)} (${fng.rating})`);
 
@@ -47,7 +48,7 @@ async function runDailySync() {
       updatedAt: new Date().toISOString()
     };
 
-    console.log(`✓ Daily Snapshot Prepared:`, JSON.stringify(dailyRecord, null, 2));
+    console.log(`✓ Daily Snapshot Prepared:\n`, JSON.stringify(dailyRecord, null, 2));
     console.log(`✓ Daily Sync completed successfully.`);
   } catch (err) {
     console.error(`✗ Daily Sync failed:`, err.message);
