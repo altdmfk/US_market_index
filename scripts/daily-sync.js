@@ -73,10 +73,19 @@ async function runDailySync() {
 
     console.log(`✓ Fetched CNN Fear & Greed: Score = ${fng.score.toFixed(1)} (${fng.rating})`);
 
-    // 2. Format daily record dynamically from upstream observation timestamp
-    const dateStr = fng.timestamp
-      ? new Date(fng.timestamp).toISOString().split('T')[0]
-      : new Date().toISOString().split('T')[0];
+    // 2. Format daily record dynamically strictly in Asia/Seoul (KST)
+    const getKstDate = (ts) => {
+      const d = new Date(ts);
+      const formatter = new Intl.DateTimeFormat('en-CA', {
+        timeZone: 'Asia/Seoul',
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit'
+      });
+      return formatter.format(d);
+    };
+
+    const dateStr = getKstDate(fng.timestamp || Date.now());
     const dailyRecord = {
       id: `${dateStr}_fear_and_greed`,
       date: dateStr,
