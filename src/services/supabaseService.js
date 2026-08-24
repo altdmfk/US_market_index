@@ -21,10 +21,10 @@ export async function fetchSupabaseSnapshots(dataType = null) {
       : `${SUPABASE_CONFIG.url}/rest/v1/daily_market_snapshots?select=*&order=date.desc&limit=10`;
 
     const response = await fetch(url, { headers: HEADERS });
-    if (!response.ok) return [];
+    if (!response.ok) return null;
 
     const data = await response.json();
-    if (!Array.isArray(data)) return [];
+    if (!Array.isArray(data)) return null;
 
     return data.map(row => ({
       id: `${row.date}_${row.data_type}`,
@@ -45,6 +45,6 @@ export async function fetchSupabaseSnapshots(dataType = null) {
       rawPayload: row.raw_payload
     }));
   } catch {
-    return [];
+    return null;
   }
 }

@@ -72,7 +72,7 @@ export function getStoredSnapshots(dataType = null) {
 export async function syncWithSupabase(dataType = null) {
   try {
     const remoteSnapshots = await fetchSupabaseSnapshots(dataType);
-    if (remoteSnapshots && remoteSnapshots.length > 0) {
+    if (remoteSnapshots !== null) {
       localStorage.setItem(STORAGE_KEY_SNAPSHOTS, JSON.stringify(remoteSnapshots.slice(0, 10)));
       if (dataType) {
         return remoteSnapshots.filter(item => item.dataType === dataType).slice(0, 10);
