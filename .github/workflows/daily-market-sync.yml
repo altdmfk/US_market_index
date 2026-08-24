@@ -1,0 +1,22 @@
+name: Daily Market Data Ingestion
+
+on:
+  schedule:
+    # Runs Monday through Friday at 21:00 UTC (4:00 PM EST / 5:00 AM KST next day - US Market Close)
+    - cron: '0 21 * * 1-5'
+  workflow_dispatch: # Allows manual trigger from GitHub UI
+
+jobs:
+  sync-market-data:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Run Daily Sync Script
+        run: node scripts/daily-sync.js
