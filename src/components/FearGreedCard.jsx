@@ -14,16 +14,21 @@ export default function FearGreedCard({ data, snapshots, timezone = 'KST' }) {
 
   // Discover previous baseline strictly from stored historical snapshots (timezone-invariant)
   let previousVal = null;
-  let previousLabel = null;
+  let previousDate = null;
 
-  if (snapshots && snapshots.length > 0) {
-    if (snapshots.length >= 2) {
-      previousVal = snapshots[1].score;
-      previousLabel = `previous (${snapshots[1].date})`;
-    } else if (snapshots.length === 1) {
-      previousVal = snapshots[0].score;
-      previousLabel = `previous (${snapshots[0].date})`;
-    }
+  if (snapshots && snapshots.length >= 2) {
+    previousVal = snapshots[1].score;
+    previousDate = snapshots[1].rawTimestamp
+      ? getLocalDateString(snapshots[1].rawTimestamp, timezone)
+      : (snapshots[1].date || null);
+  } else if (snapshots && snapshots.length === 1) {
+    previousVal = snapshots[0].score;
+    previousDate = snapshots[0].rawTimestamp
+      ? getLocalDateString(snapshots[0].rawTimestamp, timezone)
+      : (snapshots[0].date || null);
+  } else if (typeof data.previousClose === 'number') {
+    previousVal = data.previousClose;
+    previousDate = getYesterdayDateString(timezone);
   }
 
   const dod = calculateDayOverDay(score, previousVal, 'pts');
@@ -86,7 +91,7 @@ export default function FearGreedCard({ data, snapshots, timezone = 'KST' }) {
                   )}
                 </div>
                 <span className="text-xs text-slate-400 font-mono">
-                  vs {previousLabel} ({dod.previous.toFixed(1)})
+                  vs previous {previousDate ? `(${previousDate})` : 'close'} ({dod.previous.toFixed(1)})
                 </span>
               </div>
             </div>
