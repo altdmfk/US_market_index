@@ -12,22 +12,17 @@ export default function FearGreedCard({ data, snapshots, timezone = 'KST' }) {
   const score = data.score;
   const sentiment = getSentimentCategory(score);
 
-  // Discover previous baseline strictly from stored historical snapshots
+  // Discover previous baseline strictly from stored historical snapshots (timezone-invariant)
   let previousVal = null;
   let previousLabel = null;
 
   if (snapshots && snapshots.length > 0) {
-    const todayDate = getLocalDateString(new Date());
-    const priorSnapshots = snapshots.filter(s => s.date < todayDate);
-
-    if (priorSnapshots.length > 0) {
-      previousVal = priorSnapshots[0].score;
-      previousLabel = priorSnapshots[0].date === getYesterdayDateString()
-        ? 'yesterday'
-        : `previous (${priorSnapshots[0].date})`;
-    } else if (snapshots.length >= 2) {
+    if (snapshots.length >= 2) {
       previousVal = snapshots[1].score;
       previousLabel = `previous (${snapshots[1].date})`;
+    } else if (snapshots.length === 1) {
+      previousVal = snapshots[0].score;
+      previousLabel = `previous (${snapshots[0].date})`;
     }
   }
 
@@ -101,7 +96,7 @@ export default function FearGreedCard({ data, snapshots, timezone = 'KST' }) {
           <div className="pt-3 text-xs text-slate-400 flex items-center gap-2 border-t border-slate-800/60">
             <Clock className="w-3.5 h-3.5 text-blue-400" />
             <span>Updated:</span>
-            <span className="font-mono text-slate-300">{formatTimestamp(data.rawTimestamp || data.fetchedAt, timezone)}</span>
+            <span className="font-mono text-slate-300">{formatTimestamp(data.rawTimestamp || data.timestamp || data.fetchedAt || data.indexUpdatedAt, timezone)}</span>
           </div>
         </div>
 
@@ -112,7 +107,7 @@ export default function FearGreedCard({ data, snapshots, timezone = 'KST' }) {
       </div>
 
       {/* Embedded Historical Trend Line Graph with Day-over-Day Differences */}
-      <FearGreedTrendGraph data={data} snapshots={snapshots} />
+      <FearGreedTrendGraph data={data} snapshots={snapshots} timezone={timezone} />
     </div>
   );
 }

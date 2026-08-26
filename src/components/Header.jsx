@@ -6,7 +6,8 @@ import {
   TrendingUp,
   AlertTriangle,
   Lock,
-  Unlock
+  Unlock,
+  Globe
 } from 'lucide-react';
 import { FSM_STATES } from '../constants/config';
 import { formatLocalTimeShort, getLocalTimezoneShort } from '../utils/timezone';
@@ -21,15 +22,17 @@ export default function Header({
   timezone = 'KST',
   onTimezoneToggle
 }) {
-  const [localTime, setLocalTime] = useState(formatLocalTimeShort(new Date()));
-  const [tzLabel, setTzLabel] = useState(getLocalTimezoneShort());
+  const [localTime, setLocalTime] = useState(formatLocalTimeShort(new Date(), timezone));
+  const [tzLabel, setTzLabel] = useState(getLocalTimezoneShort(timezone));
 
   useEffect(() => {
+    setLocalTime(formatLocalTimeShort(new Date(), timezone));
+    setTzLabel(getLocalTimezoneShort(timezone));
     const timer = setInterval(() => {
-      setLocalTime(formatLocalTimeShort(new Date()));
+      setLocalTime(formatLocalTimeShort(new Date(), timezone));
     }, 1000);
     return () => clearInterval(timer);
-  }, []);
+  }, [timezone]);
 
   const getStatusBadge = () => {
     switch (fsmState) {
@@ -109,7 +112,52 @@ export default function Header({
               )}
             </div>
 
-            <button id="btn-timezone-toggle" type="button" data-tz={timezone} onClick={onTimezoneToggle} aria-label={`Switch timezone, currently ${timezone}`} title="Toggle KST / EDT" className="px-3 py-1.5 rounded-lg bg-slate-950/80 border border-slate-800 text-xs text-slate-300 font-semibold hover:border-blue-500/60">{timezone}</button>
+            {/* Timezone Switcher (High-Visibility Radio Segmented Pill) */}
+            <div
+              id="btn-timezone-toggle"
+              data-tz={timezone}
+              className="flex items-center bg-slate-950 p-1 rounded-lg border border-slate-800 shadow-inner"
+              role="radiogroup"
+              aria-label={`Timezone selector, active: ${timezone}`}
+              title="Switch Timezone: Korean Standard Time (KST) or US Eastern Time (EDT)"
+            >
+              <div className="hidden sm:flex items-center gap-1 pl-1.5 pr-2 text-slate-400">
+                <Globe className="w-3.5 h-3.5 text-blue-400" />
+                <span className="text-[11px] font-semibold tracking-wider text-slate-400 uppercase">TZ</span>
+              </div>
+
+              <button
+                type="button"
+                role="radio"
+                aria-checked={timezone === 'KST'}
+                onClick={() => onTimezoneToggle('KST')}
+                className={`px-2.5 py-1 text-xs font-semibold rounded-md transition-all flex items-center gap-1.5 ${
+                  timezone === 'KST'
+                    ? 'bg-blue-600 text-white shadow-sm font-bold'
+                    : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900/80'
+                }`}
+                title="Korean Standard Time (UTC+9)"
+              >
+                <span className="text-xs">🇰🇷</span>
+                <span>KST</span>
+              </button>
+
+              <button
+                type="button"
+                role="radio"
+                aria-checked={timezone === 'EDT'}
+                onClick={() => onTimezoneToggle('EDT')}
+                className={`px-2.5 py-1 text-xs font-semibold rounded-md transition-all flex items-center gap-1.5 ${
+                  timezone === 'EDT'
+                    ? 'bg-blue-600 text-white shadow-sm font-bold'
+                    : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900/80'
+                }`}
+                title="US Eastern Daylight Time (UTC-4)"
+              >
+                <span className="text-xs">🇺🇸</span>
+                <span>EDT</span>
+              </button>
+            </div>
 
             {/* Local Computer Clock */}
             <div className="hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-950/80 border border-slate-800 text-xs text-slate-300 font-mono">

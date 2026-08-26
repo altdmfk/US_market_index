@@ -3,10 +3,10 @@ import { TrendingUp, TrendingDown, LineChart } from 'lucide-react';
 import { getSentimentCategory } from '../constants/config';
 import { getLocalDateString } from '../utils/timezone';
 
-export default function FearGreedTrendGraph({ data, snapshots }) {
+export default function FearGreedTrendGraph({ data, snapshots, timezone = 'KST' }) {
   const [hoveredIndex, setHoveredIndex] = useState(null);
 
-  // Strictly use ONLY the actual stored snapshots and market observation dates in KST
+  // Dynamically format dates based on selected timezone (KST or EDT)
   const trendPoints = useMemo(() => {
     if (!Array.isArray(snapshots) || snapshots.length === 0) {
       return [];
@@ -14,12 +14,12 @@ export default function FearGreedTrendGraph({ data, snapshots }) {
 
     const pointsMap = new Map();
 
-    // Pure dynamic date extraction converted to KST (Asia/Seoul)
+    // Dynamic date extraction converted to active timezone
     const getMarketDateLabel = (item) => {
       const ts = item.rawTimestamp || item.indexUpdatedAt || item.timestamp;
       if (ts) {
         try {
-          return getLocalDateString(ts);
+          return getLocalDateString(ts, timezone);
         } catch {
           return item.date || '';
         }
@@ -27,12 +27,14 @@ export default function FearGreedTrendGraph({ data, snapshots }) {
       return item.date || '';
     };
 
-    // Ingest stored snapshots
-    snapshots.forEach((s) => {
+    // Ingest stored snapshots using immutable key to preserve exact point sequence
+    snapshots.forEach((s, idx) => {
       if (s && typeof s.score === 'number') {
-        const dateKey = getMarketDateLabel(s);
-        pointsMap.set(dateKey, {
-          date: dateKey,
+        const itemKey = s.id || `${s.date || 'item'}_${idx}`;
+        pointsMap.set(itemKey, {
+          id: itemKey,
+          date: getMarketDateLabel(s),
+          sortKey: s.date || String(idx),
           score: Number(s.score.toFixed(1)),
           rating: s.rating || getSentimentCategory(s.score).label,
           isSeeded: !!s.isSeeded
@@ -40,19 +42,25 @@ export default function FearGreedTrendGraph({ data, snapshots }) {
       }
     });
 
-    // Ingest live data using its actual market observation timestamp
+    // Ingest live data if not already represented in snapshots
     if (data && typeof data.score === 'number') {
-      const liveMarketDate = getMarketDateLabel(data);
-      pointsMap.set(liveMarketDate, {
-        date: liveMarketDate,
-        score: Number(data.score.toFixed(1)),
-        rating: data.rating || getSentimentCategory(data.score).label,
-        isSeeded: false
-      });
+      const liveKey = data.sourceId ? `live_${data.sourceId}` : 'live_fng';
+      const liveDateStr = data.date || getLocalDateString(data.rawTimestamp || new Date());
+      const alreadyIncluded = snapshots.some(s => s.date === liveDateStr);
+      if (!alreadyIncluded && !pointsMap.has(liveKey)) {
+        pointsMap.set(liveKey, {
+          id: liveKey,
+          date: getMarketDateLabel(data),
+          sortKey: '9999-99-99',
+          score: Number(data.score.toFixed(1)),
+          rating: data.rating || getSentimentCategory(data.score).label,
+          isSeeded: false
+        });
+      }
     }
 
-    // Sort strictly ascending by date (oldest to newest)
-    const sorted = Array.from(pointsMap.values()).sort((a, b) => a.date.localeCompare(b.date));
+    // Sort strictly ascending by chronology (oldest to newest)
+    const sorted = Array.from(pointsMap.values()).sort((a, b) => a.sortKey.localeCompare(b.sortKey));
 
     // Compute Day-over-Day delta between consecutive recorded points
     return sorted.map((p, idx, arr) => {
@@ -64,7 +72,7 @@ export default function FearGreedTrendGraph({ data, snapshots }) {
         prevScore: prev ? prev.score : p.score
       };
     });
-  }, [data, snapshots]);
+  }, [data, snapshots, timezone]);
 
   // If fewer than 2 data points are stored, show informative placeholder
   if (!trendPoints || trendPoints.length < 2) {

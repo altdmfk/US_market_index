@@ -13,7 +13,8 @@ export default function DevSandboxTab({
   snapshots,
   onSeedCustomDate,
   onClearStorage,
-  marketData
+  marketData,
+  timezone = 'KST'
 }) {
   return (
     <div className="space-y-6">
@@ -43,6 +44,7 @@ export default function DevSandboxTab({
       <HistoryTable
         snapshots={snapshots}
         activeSource={{ id: 'fear_and_greed', unitShort: 'pts' }}
+        timezone={timezone}
       />
     </div>
   );

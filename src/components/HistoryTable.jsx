@@ -1,12 +1,12 @@
 import React from 'react';
 import { Calendar, Check, History, Clock, ArrowDownToLine } from 'lucide-react';
 import { getSentimentCategory } from '../constants/config';
-import { getLocalDateString, getYesterdayDateString, formatLocalTimestamp } from '../utils/timezone';
+import { getLocalDateString, getYesterdayDateString, formatTimestamp } from '../utils/timezone';
 
-export default function HistoryTable({ snapshots, activeSource }) {
+export default function HistoryTable({ snapshots, activeSource, timezone = 'KST' }) {
   const isFearAndGreed = activeSource.id === 'fear_and_greed';
-  const todayDate = getLocalDateString(new Date());
-  const yesterdayDate = getYesterdayDateString();
+  const todayDate = getLocalDateString(new Date(), timezone);
+  const yesterdayDate = getYesterdayDateString(timezone);
   const displayedSnapshots = (snapshots || []).slice(0, 10);
 
   return (
@@ -28,7 +28,7 @@ export default function HistoryTable({ snapshots, activeSource }) {
           <table className="w-full text-left text-xs">
             <thead>
               <tr className="border-b border-slate-800 text-slate-400 text-[11px] font-semibold">
-                <th className="py-2.5 px-3">Downloaded (Local)</th>
+                <th className="py-2.5 px-3">Downloaded ({timezone})</th>
                 <th className="py-2.5 px-3">Index Last Updated (Market)</th>
                 <th className="py-2.5 px-3">Tag</th>
                 <th className="py-2.5 px-3">Value</th>
@@ -43,8 +43,8 @@ export default function HistoryTable({ snapshots, activeSource }) {
                 const isYesterday = item.date === yesterdayDate;
 
                 // Format Downloaded vs Market timestamps
-                const downloadedDisplay = item.downloadedAtFormatted || item.updatedAtLocal || `${item.date} Local`;
-                const marketUpdatedDisplay = item.indexUpdatedAtFormatted || formatLocalTimestamp(item.rawTimestamp || item.date);
+                const downloadedDisplay = formatTimestamp(item.downloadedAt || item.updatedAt || item.date, timezone);
+                const marketUpdatedDisplay = formatTimestamp(item.rawTimestamp || item.date, timezone);
 
                 return (
                   <tr key={item.id} className="hover:bg-slate-800/40 transition-colors">

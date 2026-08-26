@@ -8,7 +8,8 @@ export default function MarketIndexCard({
   sourceUrl,
   sourceName,
   data,
-  unit = 'pts'
+  unit = 'pts',
+  timezone = 'KST'
 }) {
   if (!data) {
     return (

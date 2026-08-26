@@ -61,7 +61,7 @@ export default function App() {
         activeTab={activeTab}
         onTabChange={setActiveTab}
         timezone={timezone}
-        onTimezoneToggle={() => setTimezone(current => current === 'KST' ? 'EDT' : 'KST')}
+        onTimezoneToggle={(newTz) => setTimezone(current => (typeof newTz === 'string' ? newTz : (current === 'KST' ? 'EDT' : 'KST')))}
       />
 
       {/* Main Container */}
@@ -128,6 +128,7 @@ export default function App() {
                 onSeedCustomDate={handleSeedCustomDate}
                 onClearStorage={handleClearStorage}
                 marketData={marketData}
+                timezone={timezone}
               />
             )}
           </>
