@@ -1,6 +1,6 @@
 import React from 'react';
 import { ExternalLink, TrendingUp, TrendingDown, Minus, Clock } from 'lucide-react';
-import { formatLocalTimestamp } from '../utils/timezone';
+import { formatTimestamp } from '../utils/timezone';
 import { calculateDayOverDay } from '../utils/math';
 
 export default function MarketIndexCard({
@@ -82,9 +82,10 @@ export default function MarketIndexCard({
       <div className="mt-5 pt-3 border-t border-slate-800/80 flex items-center justify-between text-[11px] text-slate-400">
         <span className="flex items-center gap-1 text-slate-400">
           <Clock className="w-3 h-3 text-slate-500" />
-          {formatLocalTimestamp(data.rawTimestamp || data.fetchedAt)}
+          {formatTimestamp(data.rawTimestamp || data.fetchedAt, timezone)}
         </span>
       </div>
     </div>
   );
 }
+

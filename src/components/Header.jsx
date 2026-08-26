@@ -17,7 +17,9 @@ export default function Header({
   onOpenDevAuth,
   isDevUnlocked,
   activeTab,
-  onTabChange
+  onTabChange,
+  timezone = 'KST',
+  onTimezoneToggle
 }) {
   const [localTime, setLocalTime] = useState(formatLocalTimeShort(new Date()));
   const [tzLabel, setTzLabel] = useState(getLocalTimezoneShort());
@@ -107,6 +109,8 @@ export default function Header({
               )}
             </div>
 
+            <button id="btn-timezone-toggle" type="button" data-tz={timezone} onClick={onTimezoneToggle} aria-label={`Switch timezone, currently ${timezone}`} title="Toggle KST / EDT" className="px-3 py-1.5 rounded-lg bg-slate-950/80 border border-slate-800 text-xs text-slate-300 font-semibold hover:border-blue-500/60">{timezone}</button>
+
             {/* Local Computer Clock */}
             <div className="hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-950/80 border border-slate-800 text-xs text-slate-300 font-mono">
               <Clock className="w-3.5 h-3.5 text-slate-400" />
@@ -142,3 +146,4 @@ export default function Header({
     </header>
   );
 }
+

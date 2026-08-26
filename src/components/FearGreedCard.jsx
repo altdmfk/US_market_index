@@ -1,12 +1,12 @@
 import React from 'react';
 import { ExternalLink, Clock, TrendingUp, TrendingDown, Minus } from 'lucide-react';
 import { getSentimentCategory } from '../constants/config';
-import { getLocalDateString, getYesterdayDateString, formatLocalTimestamp } from '../utils/timezone';
+import { getLocalDateString, getYesterdayDateString, formatTimestamp } from '../utils/timezone';
 import { calculateDayOverDay } from '../utils/math';
 import FearGreedGauge from './FearGreedGauge';
 import FearGreedTrendGraph from './FearGreedTrendGraph';
 
-export default function FearGreedCard({ data, snapshots }) {
+export default function FearGreedCard({ data, snapshots, timezone = 'KST' }) {
   if (!data) return null;
 
   const score = data.score;
@@ -101,7 +101,7 @@ export default function FearGreedCard({ data, snapshots }) {
           <div className="pt-3 text-xs text-slate-400 flex items-center gap-2 border-t border-slate-800/60">
             <Clock className="w-3.5 h-3.5 text-blue-400" />
             <span>Updated:</span>
-            <span className="font-mono text-slate-300">{formatLocalTimestamp(data.rawTimestamp || data.fetchedAt)}</span>
+            <span className="font-mono text-slate-300">{formatTimestamp(data.rawTimestamp || data.fetchedAt, timezone)}</span>
           </div>
         </div>
 
@@ -116,3 +116,4 @@ export default function FearGreedCard({ data, snapshots }) {
     </div>
   );
 }
+

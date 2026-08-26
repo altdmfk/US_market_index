@@ -30,6 +30,7 @@ export default function App() {
   const [activeTab, setActiveTab] = useState('overview'); // 'overview' | 'dev'
   const [isDevAuthOpen, setIsDevAuthOpen] = useState(false);
   const [isDevUnlocked, setIsDevUnlocked] = useState(false);
+  const [timezone, setTimezone] = useState('KST');
 
   const hasData = marketData.fearAndGreed !== null || marketData.sp500 !== null || marketData.qqq !== null;
 
@@ -59,6 +60,8 @@ export default function App() {
         isDevUnlocked={isDevUnlocked}
         activeTab={activeTab}
         onTabChange={setActiveTab}
+        timezone={timezone}
+        onTimezoneToggle={() => setTimezone(current => current === 'KST' ? 'EDT' : 'KST')}
       />
 
       {/* Main Container */}
@@ -85,6 +88,7 @@ export default function App() {
                     sourceUrl="https://finance.yahoo.com/quote/%5EGSPC/"
                     data={marketData.sp500}
                     unit="USD"
+                    timezone={timezone}
                   />
 
                   {/* Nasdaq QQQ Card */}
@@ -94,6 +98,7 @@ export default function App() {
                     sourceUrl="https://finance.yahoo.com/quote/QQQ/"
                     data={marketData.qqq}
                     unit="USD"
+                    timezone={timezone}
                   />
                 </div>
 
@@ -103,6 +108,7 @@ export default function App() {
                   fsmState={fsmState}
                   onRetry={handleRetry}
                   snapshots={snapshots}
+                  timezone={timezone}
                 />
 
                 {/* 3. CNN 7 Market Driver Indicators */}
@@ -154,3 +160,4 @@ export default function App() {
     </div>
   );
 }
+
