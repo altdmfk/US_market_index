@@ -4,8 +4,8 @@
  * Fetches CNN Fear & Greed + Yahoo Finance benchmarks and records daily idempotent snapshot into Supabase Cloud DB.
  */
 
-const SUPABASE_URL = process.env.SUPABASE_URL || 'https://qdgzfzxvlxoalkcvbwcd.supabase.co';
-const SUPABASE_ANON_KEY = process.env.SUPABASE_KEY || 'sb_publishable_OtTGUb0Iyc0l_vYc3cAFZA_6sMTXsDN';
+const SUPABASE_URL = process.env.SUPABASE_URL;
+const SUPABASE_ANON_KEY = process.env.SUPABASE_KEY;
 
 async function fetchJson(url, headers = {}) {
   const response = await fetch(url, {
@@ -24,6 +24,18 @@ async function fetchJson(url, headers = {}) {
 }
 
 async function upsertToSupabase(record) {
+  if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+    console.log("! SUPABASE_URL or SUPABASE_KEY environment variables not configured. Skipping Supabase DB sync.");
+    try {
+      const fs = await import('fs');
+      fs.writeFileSync('latest_snapshot.json', JSON.stringify(record, null, 2), 'utf-8');
+      console.log(`✓ Snapshot written locally to latest_snapshot.json`);
+    } catch (fsErr) {
+      console.warn(`! Failed to write local snapshot: ${fsErr.message}`);
+    }
+    return;
+  }
+
   try {
     const row = {
       date: record.date,

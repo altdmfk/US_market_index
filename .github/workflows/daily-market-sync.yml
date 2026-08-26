@@ -19,4 +19,7 @@ jobs:
           node-version: '20'
 
       - name: Run Daily Sync Script
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
         run: node scripts/daily-sync.js
